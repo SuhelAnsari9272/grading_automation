@@ -2,13 +2,14 @@ import os
 import requests
 from openai import OpenAI
 
-
-def retrieve_assignment_files(contents):
-    assignment_files = []
-    for item in contents:
-        if item['type'] == 'file':
-            assignment_files.append(item['name'])
-    return assignment_files
+def read_file_from_url(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an exception for 4xx and 5xx status codes
+        return response.text
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return None
 
 def get_repository_contents(repo_name):
     # GitHub API endpoint for repository contents
@@ -23,33 +24,46 @@ def get_repository_contents(repo_name):
         print("Error accessing repository.")
         return None
 
+def evaluate_assignment(assignment_files,api_key):
+    # Initialize OpenAI API
+    openai = OpenAI(api_key = api_key)
+    # sk-proj-RmUNBIwjypdHCtTcZ90IT3BlbkFJugpkPRs1f9TwQKMU5luE
+    
+    # Concatenate assignment files for evaluation
+    # assignment_text = ""
+    # for file in assignment_files:
+    #     with open(file, 'r') as f:
+    #         assignment_text += f.read() + '\n'
+    
+    # Call OpenAI API for evaluation
+    evaluation_result = openai.complete(prompt=assignment_files, max_tokens=150)
+    
+    # Retrieve feedback and marking from OpenAI's response
+    feedback = evaluation_result['choices'][0]['text']
+    marking = calculate_marking(evaluation_result['choices'][0]['text'])
+    
+    return feedback, marking
 
-def read_file(file_path):
-    try:
-        with open(file_path, 'r') as file:
-            file_contents = file.read()
-            return file_contents
-    except FileNotFoundError:
-        print(f"File '{file_path}' not found.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return None
+def calculate_marking(feedback):
+    # Implement your evaluation criteria here
+    # For example, you could analyze the feedback and assign a score out of 100
+    marking = 90  # Placeholder, replace with your scoring algorithm
+    return marking
 
-# file_path = "D:\assignement automation\grading_automation\Statistics_decision_solution_updated.ipynb"  # Change "example.txt" to your file path
-# contents = read_file(file_path)
 
 if __name__ == "__main__":
     repo_name = "SuhelAnsari9272/assignment_1"  # Replace with actual GitHub repository name
     api_key = 'sk-proj-RmUNBIwjypdHCtTcZ90IT3BlbkFJugpkPRs1f9TwQKMU5luE'
     contents = get_repository_contents(repo_name)
     if contents:
-        assignment_files = retrieve_assignment_files(contents)
-        file_path = r"D:\assignement automation\grading_automation\Statistics_decision_solution_updated.ipynb"
-        #print("Assignment Files:", assignment_files)
-        file_contents = read_file(file_path)
-        print(file_contents)
-
-        #evaluate_assignment()
-        # feedback, marking = evaluate_assignment(assignment_files, api_key)
-        # print("Feedback:", feedback)
-        # print("Marking:", marking)
+        # Iterate through each item in the repository contents
+        for item in contents:
+            # Check if the item is a file
+            if item['type'] == 'file':
+                # Construct the URL of the file
+                file_url = f"https://raw.githubusercontent.com/{repo_name}/main/{item['name']}"
+                # Read the contents of the file from the URL
+                file_contents = read_file_from_url(file_url)
+    
+    feedback, marking = evaluate_assignment(file_contents,api_key)
+    
