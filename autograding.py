@@ -36,5 +36,3 @@ if __name__ == "__main__":
     sub_csv = pd.concat([sub_csv,new_df], ignore_index=True)
 
     sub_csv.to_csv(r'D:\assignement automation\grading_automation\submission.csv', index=False)
-
-    print("********"*5)
