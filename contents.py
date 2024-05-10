@@ -30,6 +30,7 @@ def get_content(repo_name,contents):
                 if file_contents:
                     print(f"Contents of {item['name']}:")
                     print(file_contents)
+                    #print(type(file_contents))
                 else:
                     print(f"Failed to retrieve contents of {item['name']}")
 
@@ -37,7 +38,6 @@ def get_content(repo_name,contents):
 
 if __name__ == "__main__":
     repo_name = "SuhelAnsari9272/assignment_1"  # Replace with actual GitHub repository name
-    api_key = 'sk-proj-RmUNBIwjypdHCtTcZ90IT3BlbkFJugpkPRs1f9TwQKMU5luE'
+    api_key = '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'
     contents = get_repository_contents(repo_name)
     get_content(repo_name=repo_name, contents= contents) 
-    

@@ -1,6 +1,15 @@
 import os
 import requests
-from openai import OpenAI
+import openai
+
+def read_file_from_url(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an exception for 4xx and 5xx status codes
+        return response.text
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return None
 
 # Step 2: Access GitHub Repository
 def get_repository_contents(repo_name):
@@ -16,34 +25,48 @@ def get_repository_contents(repo_name):
         print("Error accessing repository.")
         return None
 
-# Step 3: Retrieve Assignment Files
-def retrieve_assignment_files(contents):
-    assignment_files = []
-    for item in contents:
-        if item['type'] == 'file':
-            assignment_files.append(item['name'])
-    return assignment_files
+def get_content(repo_name,contents):
+        for item in contents:
+            if item['type']=='file':
+                file_url = f"https://raw.githubusercontent.com/{repo_name}/main/{item['name']}"
+                file_contents = read_file_from_url(file_url)
+                if file_contents:
+                    #print(f"Contents of {item['name']}:")
+                    return file_contents
+                else:
+                    return f"Failed to retrieve contents of {item['name']}"
+
 
 # Step 4: Integration with ChatGPT
-def evaluate_assignment(assignment_files,api_key):
-    # Initialize OpenAI API
-    openai = OpenAI(api_key = api_key)
-    # sk-proj-RmUNBIwjypdHCtTcZ90IT3BlbkFJugpkPRs1f9TwQKMU5luE
-    
-    # Concatenate assignment files for evaluation
-    assignment_text = ""
-    for file in assignment_files:
-        with open(file, 'r') as f:
-            assignment_text += f.read() + '\n'
+def summary_assignment(assignment_text,api_key):
     
     # Call OpenAI API for evaluation
-    evaluation_result = openai.complete(prompt=assignment_text, max_tokens=150)
+    summarization_prompt =  f"Is the following code correct? Code: '{assignment_text}'" 
+
+    #feedback prompt
+    feedback_prompt = 'Give the feedback about the code and give mark out of 100'
     
     # Retrieve feedback and marking from OpenAI's response
-    feedback = evaluation_result['choices'][0]['text']
-    marking = calculate_marking(evaluation_result['choices'][0]['text'])
+    feedback_response = openai.Completion.create(
+        #engine="text-davinci-002",
+        model = "gpt-3.5-turbo",
+        prompt = feedback_prompt,
+        max_tokens = 150,
+        api_key = api_key )
     
-    return feedback, marking
+    marking_response = openai.Completion.create(
+        #engine="text-davinci-002",
+        model= "gpt-3.5-turbo",
+        prompt=feedback_prompt,
+        max_tokens=150,
+        api_key=api_key
+    )
+
+    # Extract and return the summary and sentiment analysis
+    feedback = feedback_response.choices[0].text
+    marking = marking_response.choices[0].text
+    
+    return {'feedback': feedback, 'marking': marking}
 
 # Step 5: Evaluation Criteria (You can customize this)
 def calculate_marking(feedback):
@@ -55,11 +78,9 @@ def calculate_marking(feedback):
 # Example usage
 if __name__ == "__main__":
     repo_name = "SuhelAnsari9272/assignment_1"  # Replace with actual GitHub repository name
-    api_key = 'sk-proj-RmUNBIwjypdHCtTcZ90IT3BlbkFJugpkPRs1f9TwQKMU5luE'
+    api_key = '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'
     contents = get_repository_contents(repo_name)
-    if contents:
-        assignment_files = retrieve_assignment_files(contents)
-        print("Assignment Files:", assignment_files)
-        feedback, marking = evaluate_assignment(assignment_files, api_key)
-        print("Feedback:", feedback)
-        print("Marking:", marking)
+    assignment_text = get_content(repo_name,contents)
+    result = summary_assignment(assignment_text = assignment_text,api_key = api_key)
+    print('feedback :' , result['feedback'])
+    print('marking: ', result['marking'])
