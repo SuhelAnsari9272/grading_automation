@@ -78,7 +78,7 @@ def calculate_marking(feedback):
 # Example usage
 if __name__ == "__main__":
     repo_name = "SuhelAnsari9272/assignment_1"  # Replace with actual GitHub repository name
-    api_key = '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'
+    api_key = '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'
     contents = get_repository_contents(repo_name)
     assignment_text = get_content(repo_name,contents)
     result = summary_assignment(assignment_text = assignment_text,api_key = api_key)
